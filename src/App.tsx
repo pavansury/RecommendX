@@ -52,7 +52,7 @@ function AnimatedRoutes() {
 function App() {
   return (
     <RecommendationProvider>
-      <Router future={router.future}>
+  <Router future={router.future} basename={import.meta.env.PROD ? '/RecommendX' : '/'}>
         <div className="flex flex-col min-h-screen">
           <Navbar />
           <main className="flex-grow">
