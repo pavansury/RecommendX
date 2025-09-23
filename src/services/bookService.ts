@@ -1,44 +1,63 @@
 import axios from 'axios';
 import { Book } from '../types/book';
 
-// Google Books API Configuration
-const GOOGLE_BOOKS_API_KEY = 'AIzaSyCQ5VA7wo15aWurVWn-6C_MRs1zQvkUUU8';
+// Google Books API Configuration (prefer env; fallback to existing key)
+const GOOGLE_BOOKS_API_KEY = (import.meta as any)?.env?.VITE_GOOGLE_BOOKS_API_KEY || 'AIzaSyCQ5VA7wo15aWurVWn-6C_MRs1zQvkUUU8';
 const GOOGLE_BOOKS_API_URL = 'https://www.googleapis.com/books/v1/volumes';
 
-// Map our language codes to Google Books language codes
+// Normalize language inputs from UI names or codes for Google Books API
 const mapToGoogleBooksLanguage = (language: string): string => {
+  const normalized = language.toLowerCase();
   const languageMap: Record<string, string> = {
-    'hi': 'hi',    // Hindi
-    'ta': 'ta',    // Tamil
-    'te': 'te',    // Telugu
-    'kn': 'kn',    // Kannada
-    'ml': 'ml',    // Malayalam
-    'bn': 'bn',    // Bengali
-    'mr': 'mr',    // Marathi
-    'gu': 'gu',    // Gujarati
-    'pa': 'pa',    // Punjabi
-    'en': 'en'     // English
+    // Names -> codes
+    'hindi': 'hi',
+    'tamil': 'ta',
+    'telugu': 'te',
+    'kannada': 'kn',
+    'malayalam': 'ml',
+    'bengali': 'bn',
+    'marathi': 'mr',
+    'gujarati': 'gu',
+    'punjabi': 'pa',
+    'odia': 'or',
+    'assamese': 'as',
+    'english': 'en',
+    // Codes pass-through
+    'hi': 'hi',
+    'ta': 'ta',
+    'te': 'te',
+    'kn': 'kn',
+    'ml': 'ml',
+    'bn': 'bn',
+    'mr': 'mr',
+    'gu': 'gu',
+    'pa': 'pa',
+    'or': 'or',
+    'as': 'as',
+    'en': 'en',
   };
-  return languageMap[language] || 'en';
+  return languageMap[normalized] || 'en';
 };
 
 // Get popular books with optional language filter
 export const getPopularBooks = async (language?: string): Promise<Book[]> => {
   try {
     // Search for popular books in the specified language
-    const params: any = {
+    const paramsBase: any = {
       q: 'subject:fiction',
       orderBy: 'relevance',
       maxResults: 20,
       key: GOOGLE_BOOKS_API_KEY,
       printType: 'books',
-      filter: 'paid-ebooks',
-      langRestrict: language ? mapToGoogleBooksLanguage(language) : undefined
+    };
+    const params: any = {
+      ...paramsBase,
+      langRestrict: language ? mapToGoogleBooksLanguage(language) : undefined,
     };
     
     console.log('Fetching books with params:', params);
     
-    const response = await axios.get(GOOGLE_BOOKS_API_URL, { 
+    let response = await axios.get(GOOGLE_BOOKS_API_URL, { 
       params,
       paramsSerializer: (params) => {
         return Object.entries(params)
@@ -47,14 +66,30 @@ export const getPopularBooks = async (language?: string): Promise<Book[]> => {
           .join('&');
       }
     });
-    
-    if (!response.data?.items) {
-      console.log('No books found for the given criteria');
-      return [];
+
+    // Fallbacks if no items returned
+    if (!response.data?.items || response.data.items.length === 0) {
+      console.warn('No books found for given language. Retrying without language restriction...');
+      // Try without language restriction
+      response = await axios.get(GOOGLE_BOOKS_API_URL, {
+        params: paramsBase,
+      });
     }
-    
-    console.log(`Fetched ${response.data.items.length} books`);
-    return response.data.items;
+
+    if (!response.data?.items || response.data.items.length === 0) {
+      console.warn('Still no books. Retrying with alternate subject query...');
+      // Try broader query
+      response = await axios.get(GOOGLE_BOOKS_API_URL, {
+        params: {
+          ...paramsBase,
+          q: 'subject:literature OR subject:novel OR subject:india',
+        },
+      });
+    }
+
+    const items = response.data?.items || [];
+    console.log(`Fetched ${items.length} books`);
+    return items;
   } catch (error: any) {
     // Handle specific axios errors
     if (axios.isAxiosError(error)) {
@@ -88,7 +123,8 @@ export const searchBooks = async (query: string, language?: string): Promise<Boo
     const params: any = {
       q: query,
       maxResults: 20,
-      key: GOOGLE_BOOKS_API_KEY
+      key: GOOGLE_BOOKS_API_KEY,
+      printType: 'books',
     };
     
     // Add language filter if provided
@@ -298,13 +334,16 @@ export const getBooksByCategory = async (category: string, language?: string): P
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
       
       try {
-        const params: any = {
+        const paramsBase: any = {
           q: `subject:${encodeURIComponent(category)}`,
           orderBy: 'relevance',
           maxResults: 20,
           key: GOOGLE_BOOKS_API_KEY,
-          filter: 'paid-ebooks',
           printType: 'books'
+        };
+        const params: any = {
+          ...paramsBase,
+          ...(language ? { langRestrict: language } : {}),
         };
         
         // Add language filter if provided
@@ -312,13 +351,27 @@ export const getBooksByCategory = async (category: string, language?: string): P
           params.langRestrict = language;
         }
         
-        const response = await axios.get(GOOGLE_BOOKS_API_URL, { params });
+  let response = await axios.get(GOOGLE_BOOKS_API_URL, { params });
         
         // Clear the timeout since the request completed
         clearTimeout(timeoutId);
         
+        let items: Book[] = response.data.items || [];
+
+        if (items.length === 0 && language) {
+          console.warn('No category books found with language. Retrying without language...');
+          response = await axios.get(GOOGLE_BOOKS_API_URL, { params: paramsBase });
+          items = response.data.items || [];
+        }
+
+        if (items.length === 0) {
+          console.warn('Still no category books. Retrying with broader query...');
+          response = await axios.get(GOOGLE_BOOKS_API_URL, { params: { ...paramsBase, q: 'subject:literature OR subject:novel' } });
+          items = response.data.items || [];
+        }
+
         // Google Books API returns an empty array if no items found, which is valid
-        return response.data.items || [];
+        return items;
       } catch (err) {
         // Make sure to clear the timeout if there's an error
         clearTimeout(timeoutId);

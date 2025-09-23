@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const TMDB_API_KEY = 'a2d5b9e3da10dad4af724bfccab52310';
+const TMDB_API_KEY = (import.meta as any)?.env?.VITE_TMDB_API_KEY || 'a2d5b9e3da10dad4af724bfccab52310';
 const TMDB_URL = 'https://api.themoviedb.org/3/movie/popular';
 
-const GOOGLE_BOOKS_API_KEY = 'AIzaSyAqOg-25YOaaa8kpZzELMIWTlj-P5odmRw';
+const GOOGLE_BOOKS_API_KEY = (import.meta as any)?.env?.VITE_GOOGLE_BOOKS_API_KEY || 'AIzaSyCQ5VA7wo15aWurVWn-6C_MRs1zQvkUUU8';
 const GOOGLE_BOOKS_URL = 'https://www.googleapis.com/books/v1/volumes';
 
 const TestApi = () => {

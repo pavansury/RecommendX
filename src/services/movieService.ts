@@ -1,12 +1,47 @@
 import axios from 'axios';
 import { Movie } from '../types/movie';
 
-// TMDB API Configuration
-const TMDB_API_KEY = 'a2d5b9e3da10dad4af724bfccab52310';
+// TMDB API Configuration (prefer env; fallback to existing key)
+const TMDB_API_KEY = (import.meta as any)?.env?.VITE_TMDB_API_KEY || 'a2d5b9e3da10dad4af724bfccab52310';
 const TMDB_API_URL = 'https://api.themoviedb.org/3';
 
-// Map our language codes to TMDB language codes
-const mapToTMDBCode = (language: string): string => {
+// Normalize language inputs from UI (e.g., 'hindi') or codes (e.g., 'hi')
+// and map to TMDB accepted values
+const normalizeToLangCode = (language: string): string => {
+  const normalized = language.toLowerCase();
+  const nameToCode: Record<string, string> = {
+    // Names
+    'hindi': 'hi',
+    'tamil': 'ta',
+    'telugu': 'te',
+    'kannada': 'kn',
+    'malayalam': 'ml',
+    'bengali': 'bn',
+    'marathi': 'mr',
+    'gujarati': 'gu',
+    'punjabi': 'pa',
+    'odia': 'or',
+    'assamese': 'as',
+    'english': 'en',
+    // Codes pass-through
+    'hi': 'hi',
+    'ta': 'ta',
+    'te': 'te',
+    'kn': 'kn',
+    'ml': 'ml',
+    'bn': 'bn',
+    'mr': 'mr',
+    'gu': 'gu',
+    'pa': 'pa',
+    'or': 'or',
+    'as': 'as',
+    'en': 'en',
+  };
+  return nameToCode[normalized] || 'en';
+};
+
+// Map language code to TMDB locale for the `language` param
+const mapToTMDBCode = (langCode: string): string => {
   const languageMap: Record<string, string> = {
     'hi': 'hi-IN', // Hindi
     'ta': 'ta-IN', // Tamil
@@ -17,14 +52,19 @@ const mapToTMDBCode = (language: string): string => {
     'mr': 'mr-IN', // Marathi
     'gu': 'gu-IN', // Gujarati
     'pa': 'pa-IN', // Punjabi
+    'or': 'or-IN', // Odia
+    'as': 'as-IN', // Assamese
     'en': 'en-US'  // English
   };
-  return languageMap[language] || 'en-US';
+  return languageMap[langCode] || 'en-US';
 };
 
 // Get popular movies with optional language filter
 export const getPopularMovies = async (language?: string): Promise<Movie[]> => {
   try {
+    // Normalize language from UI values like 'hindi' to ISO code like 'hi'
+    const langCode = language ? normalizeToLangCode(language) : undefined;
+
     const params: any = {
       api_key: TMDB_API_KEY,
       page: 1,
@@ -32,15 +72,15 @@ export const getPopularMovies = async (language?: string): Promise<Movie[]> => {
       sort_by: 'popularity.desc',
       include_adult: false,
       include_video: false,
-      with_original_language: language || undefined
+      with_original_language: langCode || undefined
     };
 
     // Add language parameter if specified
-    if (language) {
-      params.language = mapToTMDBCode(language);
+    if (langCode) {
+      params.language = mapToTMDBCode(langCode);
     }
 
-    console.log('Fetching movies with params:', params);
+  console.log('Fetching movies with params:', params);
     
     const response = await axios.get(`${TMDB_API_URL}/discover/movie`, {
       params,

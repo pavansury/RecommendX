@@ -164,14 +164,25 @@ export const RecommendationProvider: React.FC<{ children: ReactNode }> = ({ chil
     if (selectedLanguage === 'all') {
       return allContent;
     }
-    
+
+    // Normalize UI language names (e.g., 'hindi') to codes (e.g., 'hi')
+    const normalize = (lang: string) => {
+      const map: Record<string, string> = {
+        hindi: 'hi', tamil: 'ta', telugu: 'te', kannada: 'kn', malayalam: 'ml',
+        bengali: 'bn', marathi: 'mr', gujarati: 'gu', punjabi: 'pa', odia: 'or',
+        assamese: 'as', english: 'en',
+      };
+      const lower = lang.toLowerCase();
+      return map[lower] || lower; // pass through codes like 'hi'
+    };
+
+    const langCode = normalize(selectedLanguage);
+
     return allContent.filter(item => {
       if (contentType === 'movies') {
-        // Assuming Movie has a 'original_language' property
-        return (item as Movie).original_language === selectedLanguage;
+        return (item as Movie).original_language === langCode;
       } else {
-        // For Book, language is usually under volumeInfo.language
-        return (item as Book).volumeInfo?.language === selectedLanguage;
+        return (item as Book).volumeInfo?.language === langCode;
       }
     });
   };

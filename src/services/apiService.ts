@@ -1,13 +1,9 @@
 import axios from 'axios';
 
-// API keys and base URLs
-const TMDB_API_KEY = 'a2d5b9e3da10dad4af724bfccab52310'; // Updated API key
+// API keys and base URLs (prefer env vars; fallback to known dev keys)
+const TMDB_API_KEY = (import.meta as any)?.env?.VITE_TMDB_API_KEY || 'a2d5b9e3da10dad4af724bfccab52310';
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-const GOOGLE_BOOKS_API_KEY = 'AIzaSyCQ5VA7wo15aWurVWn-6C_MRs1zQvkUUU8'; // Updated API key
-
-// Log API configurations for debugging
-console.log('API Service - TMDB Key:', '***' + TMDB_API_KEY.slice(-4));
-console.log('API Service - Google Books Key:', '***' + GOOGLE_BOOKS_API_KEY.slice(-4));
+const GOOGLE_BOOKS_API_KEY = (import.meta as any)?.env?.VITE_GOOGLE_BOOKS_API_KEY || 'AIzaSyCQ5VA7wo15aWurVWn-6C_MRs1zQvkUUU8';
 const GOOGLE_BOOKS_API_URL = 'https://www.googleapis.com/books/v1/volumes';
 
 // For TMDB API (movies)
@@ -35,9 +31,9 @@ export const fetchMoviesByLanguage = async (language: string, page = 1) => {
       ? 'discover/movie' 
       : `discover/movie`;
       
-    const response = await axios.get(`${TMDB_BASE_URL}/${endpoint}`, {
+  const response = await axios.get(`${TMDB_BASE_URL}/${endpoint}`, {
       params: {
-        api_key: TMDB_API_KEY,
+    api_key: TMDB_API_KEY,
         page,
         with_original_language: language !== 'all' ? languageCode : undefined,
         region: 'IN', // To prioritize Indian content
