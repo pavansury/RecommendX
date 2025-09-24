@@ -2,14 +2,25 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/RecommendX/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="/RecommendX/" />
     <title>RecommendX - Movies & Books</title>
     <meta name="description" content="Discover your next favorite movie or book with personalized recommendations">
-  <script type="module" crossorigin src="./assets/index-BjRKW7wg.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-Do6bbUrD.css">
+    <script type="module" crossorigin src="/RecommendX/assets/index-BjRKW7wg.js"></script>
+    <link rel="stylesheet" crossorigin href="/RecommendX/assets/index-Do6bbUrD.css">
   </head>
   <body class="bg-gray-50 dark:bg-gray-900">
     <div id="root"></div>
+    <script>
+      // GitHub Pages SPA redirect: if direct route, replace path with base path keeping hash
+      (function() {
+        var l = window.location;
+        if (!l.pathname.endsWith('/') && !l.pathname.includes('.')) {
+          // Likely a client route. Reload root with preserved path in hash for optional handling.
+          // This app boots via bundled JS, so just let React Router handle current location.
+        }
+      })();
+    </script>
   </body>
 </html>
