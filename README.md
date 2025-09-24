@@ -216,5 +216,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 Project Link: [https://github.com/pavansury/RecommendX](https://github.com/pavansury/RecommendX)
 
 ---
-
-⭐ **Star this repository if you found it helpful!**
